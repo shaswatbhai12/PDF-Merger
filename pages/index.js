@@ -1,0 +1,156 @@
+import { useEffect } from 'react';
+import Head from 'next/head';
+
+export default function Home() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.files = [];
+    }
+  }, []);
+
+  return (
+    <>
+      <Head>
+        <title>PDF Merger</title>
+      </Head>
+      
+      <div className="container">
+        <h1>PDF Merger</h1>
+        
+        <div className="upload-area" id="uploadArea">
+          <div className="upload-content">
+            <div className="upload-icon">📄</div>
+            <p>Drag & drop PDF files here</p>
+            <p className="upload-text">or <span className="browse-link">browse files</span></p>
+          </div>
+          <input type="file" id="fileInput" multiple accept=".pdf" hidden />
+        </div>
+
+        <div className="file-list" id="fileList"></div>
+
+        <form action="/api/upload" method="post" encType="multipart/form-data" id="uploadForm">
+          <input type="file" name="pdf_files" multiple accept=".pdf" id="hiddenFileInput" style={{display: 'none'}} />
+          <button type="submit" id="uploadBtn" style={{display: 'none'}}>Upload Files</button>
+        </form>
+
+        <form action="/api/merge" method="post" id="mergeForm" style={{display: 'none'}}>
+          <button type="submit">Merge PDFs</button>
+        </form>
+      </div>
+
+      <script dangerouslySetInnerHTML={{
+        __html: `
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const hiddenFileInput = document.getElementById('hiddenFileInput');
+const fileList = document.getElementById('fileList');
+const uploadForm = document.getElementById('uploadForm');
+const mergeForm = document.getElementById('mergeForm');
+let files = [];
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+function handleFiles(newFiles) {
+    const pdfFiles = Array.from(newFiles).filter(f => f.type === 'application/pdf');
+    files = [...files, ...pdfFiles];
+    
+    const dt = new DataTransfer();
+    files.forEach(file => dt.items.add(file));
+    hiddenFileInput.files = dt.files;
+    
+    displayFiles();
+    uploadFiles();
+}
+
+function displayFiles() {
+    fileList.innerHTML = files.map((f, i) => 
+        \`<div class="file-item" draggable="true" data-index="\${i}">
+            <span class="drag-handle">☰</span>
+            <span class="file-name">\${f.name}</span>
+            <span class="remove-btn" onclick="removeFile(\${i})">×</span>
+        </div>\`
+    ).join('');
+    
+    document.querySelectorAll('.file-item').forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.style.opacity = '0.5';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    if (this !== draggedElement) {
+        const draggedIndex = parseInt(draggedElement.dataset.index);
+        const targetIndex = parseInt(this.dataset.index);
+        
+        const draggedFile = files[draggedIndex];
+        files.splice(draggedIndex, 1);
+        files.splice(targetIndex, 0, draggedFile);
+        
+        const dt = new DataTransfer();
+        files.forEach(file => dt.items.add(file));
+        hiddenFileInput.files = dt.files;
+        
+        displayFiles();
+        uploadFiles();
+    }
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+    draggedElement = null;
+}
+
+function uploadFiles() {
+    if (files.length > 0) {
+        fetch('/api/upload', {
+            method: 'POST',
+            body: new FormData(uploadForm)
+        }).then(() => {
+            mergeForm.style.display = 'block';
+        });
+    }
+}
+
+function removeFile(index) {
+    files.splice(index, 1);
+    const dt = new DataTransfer();
+    files.forEach(file => dt.items.add(file));
+    hiddenFileInput.files = dt.files;
+    displayFiles();
+    
+    if (files.length === 0) {
+        mergeForm.style.display = 'none';
+    } else {
+        uploadFiles();
+    }
+}
+        `
+      }} />
+    </>
+  );
+}
