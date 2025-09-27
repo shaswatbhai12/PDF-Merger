@@ -35,13 +35,14 @@ export default async function handler(req,res) {
         global.uploadedFiles = filePaths;
 
         // Check if it's a fetch request (like flask does)
-        const contentType = req.headers['content-type'];
-        if (contentType = req.headers['content-type'] || '') {
-            return res.status(200).json({
-                status:'success',
-                files: fileArray.lenght
-            });
-        }
+    const contentType = req.headers['content-type'] || '';
+    if (contentType) {
+        return res.status(200).json({
+        status: 'success',
+        files: fileArray.length
+    });
+}
+
 
         return res.redirect('/');
     } catch (error) {
