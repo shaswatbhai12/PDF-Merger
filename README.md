@@ -1,6 +1,6 @@
 # PDF Merger
 
-A sleek web application for merging multiple PDF files into a single document. Built with Flask and featuring a modern dark interface.
+A sleek web application for merging multiple PDF files into a single document. Built with Next.js and featuring a modern dark interface.
 
 ## Features
 
@@ -9,14 +9,14 @@ A sleek web application for merging multiple PDF files into a single document. B
 - **Real-time Preview** - See your file list update instantly
 - **Modern UI** - Clean black and white design with smooth animations
 - **Mobile Responsive** - Works perfectly on desktop and mobile devices
-- **Fast Processing** - Quick PDF merging with PyPDF2
+- **Fast Processing** - Quick PDF merging with pdf-lib
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.7 or higher
-- pip package manager
+- Node.js 16.0 or higher
+- npm package manager
 
 ### Installation
 
@@ -25,18 +25,18 @@ A sleek web application for merging multiple PDF files into a single document. B
 3. Install the required dependencies:
 
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
 ### Running the Application
 
-Start the Flask development server:
+Start the Next.js development server:
 
 ```bash
-python app.py
+npm run dev
 ```
 
-Open your browser and go to `http://localhost:5000`
+Open your browser and go to `http://localhost:3000`
 
 ## How to Use
 
@@ -45,27 +45,13 @@ Open your browser and go to `http://localhost:5000`
 3. **Merge**: Click the "Merge PDFs" button to combine your files
 4. **Download**: Your merged PDF will be ready for download
 
-## Project Structure
-
-```
-pdf-merger/
-├── app.py              # Main Flask application
-├── templates/          # HTML templates
-│   ├── base.html      # Base template
-│   ├── index.html     # Main page
-│   ├── download.html  # Download page
-│   └── about.html     # About page
-├── static/            # Static files
-│   └── style.css      # Stylesheet
-├── uploads/           # Temporary file storage
-└── requirements.txt   # Python dependencies
-```
 
 ## Technologies Used
 
-- **Backend**: Flask (Python web framework)
-- **PDF Processing**: PyPDF2 for merging PDF files
-- **Frontend**: Vanilla JavaScript with modern CSS
+- **Framework**: Next.js (React framework)
+- **PDF Processing**: pdf-lib for merging PDF files
+- **File Upload**: formidable for handling multipart forms
+- **Frontend**: React with vanilla JavaScript
 - **Styling**: Custom CSS with Inter font family
 
 ## Browser Support
