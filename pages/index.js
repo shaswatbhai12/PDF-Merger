@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 
 export default function Home() {
   useEffect(() => {
@@ -15,16 +14,6 @@ export default function Home() {
         <title>PDF Merger</title>
       </Head>
       
-      <nav className="navbar">
-        <div className="nav-container">
-          <Link href="/" className="nav-brand">PDF-Merger</Link>
-          <div className="nav-links">
-            <Link href="/">Home</Link>
-            <Link href="/about">About</Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="container">
         <h1>PDF Merger</h1>
         
