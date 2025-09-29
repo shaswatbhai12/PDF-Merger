@@ -13,7 +13,7 @@ global.uploadedFiles = global.uploadedFiles || [];
 
 export default async function handler(req,res) {
     if (req.method !== 'POST') {
-        return res.statuss(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     const uploadDir = path.join(process.cwd(), 'uploads');
@@ -35,17 +35,17 @@ export default async function handler(req,res) {
         global.uploadedFiles = filePaths;
 
         // Check if it's a fetch request (like flask does)
-        const contentType = req.headers['content-type'];
-        if (contentType = req.headers['content-type'] || '') {
+        const contentType = req.headers['content-type'] || '';
+        if (contentType.includes('multipart/form-data')) {
             return res.status(200).json({
-                status:'success',
-                files: fileArray.lenght
+                status: 'success',
+                files: fileArray.length
             });
         }
 
         return res.redirect('/');
     } catch (error) {
-        console.error('Upoad error:', error);
+        console.error('Upload error:', error);
         res.status(500).json({ error: 'Upload failed' })
     }
 }
