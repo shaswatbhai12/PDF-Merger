@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function Home() {
   useEffect(() => {
@@ -14,6 +15,16 @@ export default function Home() {
         <title>PDF Merger</title>
       </Head>
       
+      <nav className="navbar">
+        <div className="nav-container">
+          <Link href="/" className="nav-brand">PDF-Merger</Link>
+          <div className="nav-links">
+            <Link href="/">Home</Link>
+            <Link href="/about">About</Link>
+          </div>
+        </div>
+      </nav>
+
       <div className="container">
         <h1>PDF Merger</h1>
         
@@ -27,10 +38,14 @@ export default function Home() {
         </div>
 
         <div className="file-list" id="fileList"></div>
+        
+        <div className="upload-loader" id="uploadLoader" style={{display: 'none'}}>
+          <div className="loader-spinner"></div>
+          <p>Processing files...</p>
+        </div>
 
         <form action="/api/upload" method="post" encType="multipart/form-data" id="uploadForm">
           <input type="file" name="pdf_files" multiple accept=".pdf" id="hiddenFileInput" style={{display: 'none'}} />
-          <button type="submit" id="uploadBtn" style={{display: 'none'}}>Upload Files</button>
         </form>
 
         <form action="/api/merge" method="post" id="mergeForm" style={{display: 'none'}}>
@@ -42,9 +57,8 @@ export default function Home() {
         __html: `
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
-const hiddenFileInput = document.getElementById('hiddenFileInput');
 const fileList = document.getElementById('fileList');
-const uploadForm = document.getElementById('uploadForm');
+const uploadLoader = document.getElementById('uploadLoader');
 const mergeForm = document.getElementById('mergeForm');
 let files = [];
 
@@ -61,16 +75,50 @@ uploadArea.addEventListener('drop', (e) => {
 });
 fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
+// Add click event to browse link
+document.addEventListener('DOMContentLoaded', () => {
+    const browseLink = document.querySelector('.browse-link');
+    if (browseLink) {
+        browseLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+    }
+});
+
 function handleFiles(newFiles) {
     const pdfFiles = Array.from(newFiles).filter(f => f.type === 'application/pdf');
     files = [...files, ...pdfFiles];
     
     const dt = new DataTransfer();
     files.forEach(file => dt.items.add(file));
-    hiddenFileInput.files = dt.files;
+    const hiddenFileInput = document.getElementById('hiddenFileInput');
+    if (hiddenFileInput) {
+        hiddenFileInput.files = dt.files;
+    }
     
     displayFiles();
     uploadFiles();
+}
+
+function uploadFiles() {
+    if (files.length > 0) {
+        uploadLoader.style.display = 'block';
+        
+        const formData = new FormData();
+        files.forEach(file => formData.append('pdf_files', file));
+        
+        fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        }).then(() => {
+            uploadLoader.style.display = 'none';
+            mergeForm.style.display = 'block';
+        }).catch((error) => {
+            console.error('Upload failed:', error);
+            uploadLoader.style.display = 'none';
+        });
+    }
 }
 
 function displayFiles() {
@@ -111,12 +159,7 @@ function handleDrop(e) {
         files.splice(draggedIndex, 1);
         files.splice(targetIndex, 0, draggedFile);
         
-        const dt = new DataTransfer();
-        files.forEach(file => dt.items.add(file));
-        hiddenFileInput.files = dt.files;
-        
         displayFiles();
-        uploadFiles();
     }
 }
 
@@ -125,22 +168,10 @@ function handleDragEnd(e) {
     draggedElement = null;
 }
 
-function uploadFiles() {
-    if (files.length > 0) {
-        fetch('/api/upload', {
-            method: 'POST',
-            body: new FormData(uploadForm)
-        }).then(() => {
-            mergeForm.style.display = 'block';
-        });
-    }
-}
+
 
 function removeFile(index) {
     files.splice(index, 1);
-    const dt = new DataTransfer();
-    files.forEach(file => dt.items.add(file));
-    hiddenFileInput.files = dt.files;
     displayFiles();
     
     if (files.length === 0) {
