@@ -44,13 +44,7 @@ export default function Home() {
           <p>Processing files...</p>
         </div>
 
-        <form action="/api/upload" method="post" encType="multipart/form-data" id="uploadForm">
-          <input type="file" name="pdf_files" multiple accept=".pdf" id="hiddenFileInput" style={{display: 'none'}} />
-        </form>
-
-        <form action="/api/merge" method="post" id="mergeForm" style={{display: 'none'}}>
-          <button type="submit">Merge PDFs</button>
-        </form>
+        <button id="mergeBtn" style={{display: 'none'}}>Merge PDFs</button>
       </div>
 
       <script dangerouslySetInnerHTML={{
@@ -59,7 +53,7 @@ const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
 const uploadLoader = document.getElementById('uploadLoader');
-const mergeForm = document.getElementById('mergeForm');
+const mergeBtn = document.getElementById('mergeBtn');
 let files = [];
 
 uploadArea.addEventListener('click', () => fileInput.click());
@@ -90,34 +84,14 @@ function handleFiles(newFiles) {
     const pdfFiles = Array.from(newFiles).filter(f => f.type === 'application/pdf');
     files = [...files, ...pdfFiles];
     
-    const dt = new DataTransfer();
-    files.forEach(file => dt.items.add(file));
-    const hiddenFileInput = document.getElementById('hiddenFileInput');
-    if (hiddenFileInput) {
-        hiddenFileInput.files = dt.files;
-    }
-    
     displayFiles();
-    uploadFiles();
-}
-
-function uploadFiles() {
+    
     if (files.length > 0) {
         uploadLoader.style.display = 'block';
-        
-        const formData = new FormData();
-        files.forEach(file => formData.append('pdf_files', file));
-        
-        fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        }).then(() => {
+        setTimeout(() => {
             uploadLoader.style.display = 'none';
-            mergeForm.style.display = 'block';
-        }).catch((error) => {
-            console.error('Upload failed:', error);
-            uploadLoader.style.display = 'none';
-        });
+            mergeBtn.style.display = 'block';
+        }, 500);
     }
 }
 
@@ -167,17 +141,77 @@ function handleDragEnd(e) {
     this.style.opacity = '1';
     draggedElement = null;
 }
-
-
+mergeBtn.addEventListener('click', async () => {
+    if (files.length === 0) return;
+    
+    mergeBtn.textContent = 'Merging...';
+    mergeBtn.disabled = true;
+    
+    try {
+        // Check file sizes first
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+        if (totalSize > 20000000) { // 20MB limit
+            alert('Files are too large (over 20MB total). Please use smaller PDFs or try one at a time.');
+            return;
+        }
+        
+        if (totalSize > 10000000) { // 10MB warning
+            if (!confirm('Large files detected. This may take 2-3 minutes. Continue?')) {
+                return;
+            }
+        }
+        
+        const filePromises = files.map(file => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        });
+        
+        const base64Files = await Promise.all(filePromises);
+        
+        console.log('Sending', base64Files.length, 'files to merge');
+        
+        const response = await fetch('/api/merge', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ files: base64Files })
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error('Server error: ' + response.status);
+        }
+        
+        const result = await response.json();
+        console.log('Merge result:', result);
+        
+        if (result.status === 'success') {
+            sessionStorage.setItem('mergedPDF', result.pdfData);
+            window.location.href = '/download';
+            console.log('Redirecting to download page');
+        } else {
+            throw new Error(result.error || 'Merge failed');
+        }
+    } catch (error) {
+        console.error('Merge failed:', error);
+        alert('Merge failed: ' + error.message);
+    }
+    
+    mergeBtn.textContent = 'Merge PDFs';
+    mergeBtn.disabled = false;
+});
 
 function removeFile(index) {
     files.splice(index, 1);
     displayFiles();
     
     if (files.length === 0) {
-        mergeForm.style.display = 'none';
-    } else {
-        uploadFiles();
+        mergeBtn.style.display = 'none';
     }
 }
         `

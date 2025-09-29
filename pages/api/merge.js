@@ -1,6 +1,13 @@
 import { PDFDocument } from 'pdf-lib';
-import fs from 'fs';
-import path from 'path';
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '25mb',
+    },
+    responseLimit: '25mb',
+  },
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,40 +15,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const filePaths = global.uploadedFiles || [];
+    const { files } = req.body;
     
-    if (!filePaths.length) {
-      return res.redirect('/');
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files' });
     }
+    
+    // Set timeout for large files
+    const timeout = setTimeout(() => {
+      res.status(408).json({ error: 'Processing timeout' });
+    }, 120000); // 2 minutes
     
     const mergedPdf = await PDFDocument.create();
 
-    for (const filePath of filePaths) {
-      if (fs.existsSync(filePath)) {
-        const pdfBytes = fs.readFileSync(filePath);
-        const pdf = await PDFDocument.load(pdfBytes);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
-      }
+    for (let i = 0; i < files.length; i++) {
+      const fileData = files[i];
+      const base64Data = fileData.split(',')[1];
+      const pdfBytes = Buffer.from(base64Data, 'base64');
+      const pdf = await PDFDocument.load(pdfBytes);
+      const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach(page => mergedPdf.addPage(page));
     }
 
-    const pdfBytes = await mergedPdf.save();
-    const outputPath = path.join(process.cwd(), 'merged_output.pdf');
-    fs.writeFileSync(outputPath, pdfBytes);
-
-    // Clean up uploaded files
-    for (const filePath of filePaths) {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    const result = await mergedPdf.save();
+    clearTimeout(timeout);
     
-    // Clear session
-    global.uploadedFiles = [];
-
-    return res.redirect('/download');
+    res.status(200).json({ 
+      status: 'success',
+      pdfData: Buffer.from(result).toString('base64')
+    });
   } catch (error) {
-    console.error('Merge error:', error);
     res.status(500).json({ error: 'Merge failed' });
   }
 }

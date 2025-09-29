@@ -1,7 +1,26 @@
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 
 export default function Download() {
+  const [pdfData, setPdfData] = useState(null);
+
+  useEffect(() => {
+    const storedPDF = sessionStorage.getItem('mergedPDF');
+    if (storedPDF) {
+      setPdfData(storedPDF);
+    }
+  }, []);
+
+  const downloadPDF = () => {
+    if (pdfData) {
+      const link = document.createElement('a');
+      link.href = 'data:application/pdf;base64,' + pdfData;
+      link.download = 'merged_document.pdf';
+      link.click();
+    }
+  };
+
   return (
     <>
       <Head>
@@ -22,7 +41,13 @@ export default function Download() {
         <div className="success-message">
           <h2>PDF Merged Successfully!</h2>
           <p>Your merged PDF is ready for download.</p>
-          <a href="/api/download-file" className="download-link">Download Merged PDF</a>
+          {pdfData ? (
+            <button onClick={downloadPDF} className="download-link">
+              Download Merged PDF
+            </button>
+          ) : (
+            <p>No PDF data found. Please go back and merge your files again.</p>
+          )}
         </div>
         <Link href="/">← Start New Merge</Link>
       </div>
