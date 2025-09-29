@@ -45,23 +45,6 @@ Open your browser and go to `http://localhost:3000`
 3. **Merge**: Click the "Merge PDFs" button to combine your files
 4. **Download**: Your merged PDF will be ready for download
 
-## Project Structure
-
-```
-pdf-merger/
-├── pages/             # Next.js pages
-│   ├── index.js      # Main page
-│   ├── download.js   # Download page
-│   └── api/          # API routes
-│       ├── upload.js # File upload handler
-│       ├── merge.js  # PDF merge logic
-│       └── download-file.js # File download
-├── styles/           # Stylesheets
-│   └── globals.css   # Global styles
-├── uploads/          # Temporary file storage
-└── package.json      # Node.js dependencies
-```
-
 ## Technologies Used
 
 - **Framework**: Next.js (React framework)
