@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "pages/api/upload.js": {
+      "maxDuration": 30
+    },
+    "pages/api/merge.js": {
+      "maxDuration": 30
+    }
+  }
+}
